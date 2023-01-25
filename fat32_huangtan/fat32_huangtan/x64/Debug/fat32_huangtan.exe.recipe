@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>D:\work\labs\test_for_c\my_fat32\fat32_huangtan\x64\Debug\fat32_huangtan.exe</FullPath>
+      <FullPath>D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\x64\Debug\fat32_huangtan.exe</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />
