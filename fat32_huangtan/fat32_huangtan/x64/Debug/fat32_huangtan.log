@@ -1,13 +1,2 @@
-﻿  driver.c
-D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\fat32_huangtan\xdisk.h(11,8): warning C4081: 应输入“标识符”；找到“(”
-D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\fat32_huangtan\driver.c(60,1): warning C4028: 形参 1 与声明不同
-  test.c
-D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\fat32_huangtan\xdisk.h(11,8): warning C4081: 应输入“标识符”；找到“(”
-  xdisk.c
-D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\fat32_huangtan\xdisk.h(11,8): warning C4081: 应输入“标识符”；找到“(”
-D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\fat32_huangtan\xdisk.c(9,29): warning C4133: “函数”: 从“xdisk_t *”到“_xdisk_t *”的类型不兼容
-D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\fat32_huangtan\xdisk.c(19,30): warning C4133: “函数”: 从“xdisk_t *”到“_xdisk_t *”的类型不兼容
-D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\fat32_huangtan\xdisk.c(31,49): warning C4133: “函数”: 从“xdisk_t *”到“_xdisk_t *”的类型不兼容
-D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\fat32_huangtan\xdisk.c(42,50): warning C4133: “函数”: 从“xdisk_t *”到“_xdisk_t *”的类型不兼容
-  正在生成代码...
+﻿  test.c
   fat32_huangtan.vcxproj -> D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\x64\Debug\fat32_huangtan.exe
