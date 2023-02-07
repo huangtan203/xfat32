@@ -1,2 +1,5 @@
-﻿  test.c
+﻿  xfat.c
+D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\fat32_huangtan\xfat.c(33,34): warning C4013: “malloc”未定义；假设外部返回 int
+D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\fat32_huangtan\xfat.c(33,78): warning C4312: “类型强制转换”: 从“int”转换到更大的“u8_t *”
+D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\fat32_huangtan\xfat.c(62,20): warning C4018: “<”: 有符号/无符号不匹配
   fat32_huangtan.vcxproj -> D:\work\labs\test_for_c\my_fat32\xfat32\fat32_huangtan\x64\Debug\fat32_huangtan.exe
