@@ -73,7 +73,50 @@ xfat_err_t read_cluster(xfat_t* xfat, u8_t* buffer, u32_t cluster, u32_t count) 
 	}
 	return FS_ERR_OK;
 }
+static xfat_err_t to_sfn(char*dest_name,const char*my_name) {
+	int i, name_len;
+	char* dest = dest_name;
+	const char* ext_dot;
+	const char* p;
+	int ext_existed;
+	memset(dest, ' ', SFN_LEN);
+	while (is_path_sep(*my_name)) {
+		my_name++;
+	}
+	ext_dot = my_name;
+	p = my_name;
+	name_len = 0;
+	while ((*p != '\0') && !is_path_sep(*p)) {
+		if (*p == '.') {
+			ext_dot = p;
+		}
+		p++;
+		name_len++;
+	}
+	ext_existed = (ext_dot > my_name && ext_dot < my_name + name_len - 1);
+	p = my_name;
+	for (i = 0; (i < SFN_LEN) && (*p != '\0') && !is_path_sep(*p); i++) {
+		if (ext_existed) {
+			if (p == ext_dot) {
+				dest = dest_name + 8;
+				p++;
+				i--;
+				continue;
+			}
+			else {
+				*dest++ = toupper(*p++);
+			}
+		}
+		else {
+			*dest++ = toupper(*p++);
+		}
+	}
+	return FS_ERR_OK;
+
+}
 static u8_t is_filename_match(const char* name_in_dir, const char* to_find_name) {
+	char temp_name[SFN_LEN];
+	to_sfn(temp_name, to_find_name);
 	return memcmp(name_in_dir, to_find_name, SFN_LEN) == 0;
 }
 static const char* skip_first_path_sep(const char* path) {
