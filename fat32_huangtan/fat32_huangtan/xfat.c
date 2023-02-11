@@ -1,9 +1,14 @@
 #include"xfat.h"
+#include<stdlib.h>
+#include<ctype.h>
+#include<string.h>
+#include"xdisk.h"
 extern u8_t temp_buffer[512];
 #define xfat_get_disk(xfat) ((xfat)->disk_part->disk)
 #define is_path_sep(ch) (((ch)=='\\')||((ch)=='/'))
 #define to_sector(disk,offset) ((offset)/(disk)->sector_size)
 #define to_sector_offset(disk,offset) ((offset)%(disk)->sector_size)
+#define to_cluster_offset(xfat,pos) ((pos)%((xfat)->cluster_byte_size))
 static xfat_err_t parse_fat_header(xfat_t* xfat, dbr_t* dbr) {
 	xdisk_part_t* xdisk_part = xfat->disk_part;
 	xfat->root_cluster = dbr->fat32.BPB_RootClus;
@@ -133,6 +138,29 @@ const char* get_child_path(const char* dir_path) {
 	}
 	return (*c == '\0') ? (const char* )0 : c + 1;
 }
+static void copy_date_time(xfile_time_t *dest,const diritem_date_t*date,
+	const diritem_time_t*time,const u8_t mil_sec) {
+	if (date) {
+		dest->year = (u16_t)(date->year_from_1980 + 1980);
+		dest->month = (u8_t)date->month;
+		dest->day = (u8_t)date->day;
+	}
+	else {
+		dest->year = 0;
+		dest->month =0;
+		dest->day = 0;
+	}
+	if (time) {
+		dest->hour = (u8_t)time->hour;
+		dest->minute = (u8_t)time->minute;
+		dest->second = (time->second_2 * 2 + mil_sec / 1000);
+	}
+	else {
+		dest->hour = 0;
+		dest->minute = 0;
+		dest->second = 0;
+	}
+}
 static xfile_type_t get_file_type(const diritem_t* diritem) {
 	xfile_type_t type;
 	if (diritem->DIR_Attr & DIRITEM_ATTR_VOLUME_ID) {
@@ -148,6 +176,38 @@ static xfile_type_t get_file_type(const diritem_t* diritem) {
 }
 static u32_t get_diritem_cluster(diritem_t* diritem) {
 	return (diritem->DIR_FstClusHI << 16) | (diritem->DIR_FstClusL0);
+}
+static void sfn_to_myname(char*dest_name,const diritem_t*diritem) {
+	int i;
+	char* dest = dest_name, * raw_name = (char*)diritem->DIR_Name;
+	u8_t ext_exist = raw_name[8] != 0x20;
+	u8_t scan_len = ext_exist ? SFN_LEN + 1 : SFN_LEN;
+	memset(dest_name, 0, X_FILEINFO_NAME_SIZE);
+	for (i = 0; i < scan_len; i++) {
+		if (*raw_name == ' ') {
+			raw_name++;
+		}
+		else if ((i == 8) && ext_exist) {
+			*dest++ = '.';
+		}
+		else {
+			u8_t lower = 0;
+			if (((i < 8) && diritem->DIR_NTRes & DIRITEM_NTRES_BODY_LOWER) || (i > 8 && diritem->DIR_NTRes & DIRITEM_NTRES_EXT_LOWER)) {
+				lower = 1;
+			}
+			*dest++ = lower ? tolower(*raw_name++) : toupper(*raw_name++);
+		}
+	}
+	*dest = '\0';
+}
+static void copy_file_info(xfileinfo_t* info, const diritem_t* dir_item) {
+	sfn_to_myname(info->file_name,dir_item);
+	info->size = dir_item->DIR_FileSize;
+	info->attr = dir_item->DIR_Attr;
+	info->type = get_file_type(dir_item);
+	copy_date_time(&info->create_time,&dir_item->DIR_CrtDate,&dir_item->DIR_CrtTime,dir_item->DIR_CrtTimeTeenth);
+	copy_date_time(&info->last_acctime, &dir_item->DIR_LastAccDate, (diritem_time_t*)0, 0);
+	copy_date_time(&info->modity_time, &dir_item->DIR_WrtDate, &dir_item->DIR_WrtTime, dir_item->DIR_CrtTimeTeenth);
 }
 static xfat_err_t locate_file_dir_item(xfat_t*xfat,u32_t*dir_cluster,u32_t *cluster_offset,const char*path,u32_t*move_bytes,
 	diritem_t**r_diritem){
@@ -257,4 +317,52 @@ xfat_err_t xfile_open(xfat_t* xfat, xfile_t* xfile, const char* path) {
 }
 xfat_err_t xfile_close(xfile_t* file) {
 	return FS_ERR_OK;
+}
+xfat_err_t xdir_first_file(xfile_t* file, xfileinfo_t* info) {
+	diritem_t* diritem = (diritem_t*)0;
+	xfat_err_t err;
+	u32_t moved_bytes = 0;
+	u32_t cluster_offset;
+	if (file->type != FAT_DIR) {
+		return FS_ERR_PARAM;
+	}
+	file->curr_cluster = file->start_cluster;
+	file->pos = 0;
+	cluster_offset = 0;
+	err = locate_file_dir_item(file->xfat, &file->curr_cluster, &cluster_offset, "", & moved_bytes, &diritem);
+	if (err < 0) {
+		return err;
+	}
+	if (diritem == (diritem_t*)0) {
+		return FS_ERR_EOF;
+	}
+	file->pos += moved_bytes;
+	copy_file_info(info, diritem);
+	return err;
+}
+xfat_err_t xdir_next_file(xfile_t* file, xfileinfo_t* info) {
+	xfat_err_t err;
+	diritem_t* dir_item = (diritem_t*)0;
+	u32_t moved_bytes = 0;
+	u32_t cluster_offset;
+	if (file->type != FAT_DIR) {
+		return FS_ERR_PARAM;
+	}
+	cluster_offset = to_cluster_offset(file->xfat, file->pos);
+	err = locate_file_dir_item(file->xfat, &file->curr_cluster, &cluster_offset, "", &moved_bytes, &dir_item);
+	if (err != FS_ERR_OK) {
+		return err;
+	}
+	if (dir_item == (diritem_t*)0) {
+		return FS_ERR_EOF;
+	}
+	file->pos += moved_bytes;
+	if (cluster_offset + sizeof(diritem_t) >= file->xfat->cluster_byte_size) {
+		err = get_next_cluster(file->xfat, file->curr_cluster, &file->curr_cluster);
+		if (err < 0) {
+			return err;
+		}
+	}
+	copy_file_info(info, dir_item);
+	return err;
 }

@@ -42,6 +42,9 @@ typedef struct _dbr_t {
 #define CLUSTER_INVALID 0xFFFFFFFF
 #define DIRITEM_NAME_FREE 0xE5
 #define DIRITEM_NAME_END 0X00
+
+#define DIRITEM_NTRES_BODY_LOWER 0x08
+#define DIRITEM_NTRES_EXT_LOWER 0x10
 #define DIRITEM_ATTR_READ_ONLY 0X01
 #define DIRITEM_ATTR_HIDDEN 0X02
 #define DIRITEM_ATTR_SYSTEM 0X04
@@ -93,12 +96,30 @@ typedef struct _xfat_t {
 	u8_t* fat_buffer;
 	xdisk_part_t* disk_part;
 }xfat_t;
+typedef struct _xfile_time_t {
+	u16_t year;
+	u8_t month;
+	u8_t day;
+	u8_t hour;
+	u8_t minute;
+	u8_t second;
+}xfile_time_t;
 typedef enum _xfile_type_t {
 	FAT_DIR,
 	FAT_FILE,
 	FAT_VOL,
 }xfile_type_t;
 #define SFN_LEN 11
+typedef struct  _xfileinfo_t {
+#define X_FILEINFO_NAME_SIZE 32
+	char file_name[X_FILEINFO_NAME_SIZE];
+	u32_t size;
+	u16_t attr;
+	xfile_type_t type;
+	xfile_time_t create_time;
+	xfile_time_t last_acctime;
+	xfile_time_t modity_time;
+}xfileinfo_t;
 typedef struct _xfile_t {
 	xfat_t* xfat;
 	u32_t size;
@@ -115,4 +136,6 @@ xfat_err_t xfat_open(xfat_t* xfat, xdisk_part_t* xdisk_part);
 xfat_err_t read_cluster(xfat_t* xfat, u8_t* buffer, u32_t cluster, u32_t count);
 xfat_err_t xfile_open(xfat_t* xfat, xfile_t* xfile, const char* path);
 xfat_err_t xfile_close(xfile_t* xfile);
+xfat_err_t xdir_first_file(xfile_t* file, xfileinfo_t* info);
+xfat_err_t xdir_next_file(xfile_t* file, xfileinfo_t* info);
 #endif
