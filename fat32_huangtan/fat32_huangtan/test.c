@@ -44,6 +44,19 @@ int disk_io_test() {
 	printf("disk io test ok!\n");
 	return err;
 }
+int open_test() {
+	xfat_err_t err;
+	xfile_t file;
+	printf("fs open test ...\n");
+	err=xfile_open(&xfat,&file,"/");
+	if (err) {
+		printf("open file failed %s\n", "/");
+		return err;
+	}
+	xfile_close(&file);
+	printf("file open test ok!\n");
+	return 0;
+}
 int disk_part_test() {
 	printf("===========disk_part_test start...===========\n");
 	u32_t count, i;
@@ -101,6 +114,7 @@ int main() {
 		printf("disk close failed...\n");
 		return -1;
 	}
+	open_test();
 	printf("==========test end...============\n");
 	return 0;
 }
